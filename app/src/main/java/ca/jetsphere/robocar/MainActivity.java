@@ -81,6 +81,11 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     Point screenCenter, targetCenter;
     State direction = State.STOP;
 
+    final ToggleButton btnRawImage = findViewById(R.id.btnRawImage);
+    final ToggleButton btnThresholdImage = findViewById(R.id.btnThresholdImage);
+    final ToggleButton btnTrackImage = findViewById(R.id.btnTrackImage);
+    final ToggleButton btnConnectImage = findViewById(R.id.btnConnectImage);
+
     RangeSeekBar rsbHue, rsbSaturation,  rsbValue;
 
     BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -126,11 +131,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         mImgGroup = findViewById(R.id.imgGroup);
         mHsvGroup = findViewById(R.id.hsvGroup);
-
-        final ToggleButton btnRawImage = findViewById(R.id.btnRawImage);
-        final ToggleButton btnThresholdImage = findViewById(R.id.btnThresholdImage);
-        final ToggleButton btnTrackImage = findViewById(R.id.btnTrackImage);
-        final ToggleButton btnConnectImage = findViewById(R.id.btnConnectImage);
 
         btnRawImage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -277,6 +277,19 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
 
+        if (btnTrackImage.isChecked() ) trackObject(mRgba);
+
+        switch (iImgType) {
+            case 0 : return mRgba;
+            case 2 : return imgThreshold;
+            default: return mRgba;
+        }
+    }
+
+    /**
+     *
+     */
+    private void trackObject(Mat cameraFeed) {
         Imgproc.GaussianBlur(mRgba, imgBlurred, new Size(11, 11), 0);
         Imgproc.cvtColor(imgBlurred, imgBlurred, Imgproc.COLOR_BGR2HSV);
         Core.inRange(imgBlurred, new Scalar(((int) rsbHue.getSelectedMinValue()), ((int) rsbSaturation.getSelectedMinValue()), ((int)rsbValue.getSelectedMinValue())), new Scalar(((int) rsbHue.getSelectedMaxValue()), ((int) rsbSaturation.getSelectedMaxValue()), ((int) rsbValue.getSelectedMaxValue())), imgThreshold);
@@ -304,11 +317,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 //        if (degrees > 0 && degrees < 30) direction = State.FORWARD_RIGHT; else
 //        if (degrees > 0 && degrees < 30) direction = State.FORWARD_RIGHT; else
 
-        switch (iImgType) {
-            case 0 : return mRgba;
-            case 2 : return imgThreshold;
-            default: return mRgba;
-        }
     }
 
     /**
