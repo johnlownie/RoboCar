@@ -1,9 +1,11 @@
-package ca.jetsphere.robocar;
+package ca.jetsphere.robocar.activities;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+
+import ca.jetsphere.robocar.R;
 
 public class HiddenActivity extends AppCompatActivity {
 

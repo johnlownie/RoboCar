@@ -1,4 +1,4 @@
-package ca.jetsphere.robocar;
+package ca.jetsphere.robocar.activities;
 
 import android.Manifest;
 import android.app.Activity;
@@ -48,6 +48,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import ca.jetsphere.robocar.R;
 
 /**
  *

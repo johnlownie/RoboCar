@@ -8,15 +8,13 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Set;
 import java.util.UUID;
 
-import ca.jetsphere.robocar.HiddenActivity;
+import ca.jetsphere.robocar.activities.HiddenActivity;
 
 public class BluetoothService extends Service
 {
