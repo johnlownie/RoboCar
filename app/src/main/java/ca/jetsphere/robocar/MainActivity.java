@@ -52,8 +52,8 @@ import java.util.UUID;
 /**
  *
  */
-public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
-
+public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2
+{
     private static String TAG = "MainActivity";
     private static final String FRAGMENT_DIALOG = "dialog";
     private static final int REQUEST_CAMERA_PERMISSION = 1;
@@ -94,6 +94,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         }
     };
 
+    /**
+     *
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
