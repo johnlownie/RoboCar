@@ -168,6 +168,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         btnConnectImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.i(TAG, "BT Connect clicked...");
                 if ( bluetoothDevice == null || !bluetoothSocket.isConnected()) {
                     if ( bluetoothDevice == null) bluetoothDevice = BTInit();
                     btnConnectImage.setChecked(bluetoothDevice == null ? false : BTConnect());
@@ -437,6 +438,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
      *
      */
     private BluetoothDevice BTInit() {
+        Log.i(TAG, "Initializing Bluetooth...");
+        Toast.makeText(getApplicationContext(), "Initializing Bluetooth...", Toast.LENGTH_SHORT).show();
+
         BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         if(bluetoothAdapter == null) { Toast.makeText(getApplicationContext(), "Device doesn't support bluetooth", Toast.LENGTH_SHORT).show(); return null; }
@@ -456,6 +460,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         for(BluetoothDevice device : bondedDevices) {
             if(device.getAddress().equals(DEVICE_ADDRESS)) {
+                Log.i(TAG, "Initialized.");
                 return device;
             }
         }
@@ -468,15 +473,19 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
      */
     private boolean BTConnect()
     {
+        Log.i(TAG, "Connecting Bluetooth...");
+        Toast.makeText(getApplicationContext(), "Connecting Bluetooth...", Toast.LENGTH_SHORT).show();
+
         boolean connected = true;
 
         try {
             bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(PORT_UUID); //Creates a socket to handle the outgoing connection
             bluetoothSocket.connect();
 
+            Log.i(TAG, "Connected.");
             Toast.makeText(getApplicationContext(), "Connection to bluetooth device successful", Toast.LENGTH_LONG).show();
         }
-        catch(IOException e) { e.printStackTrace(); connected = false; }
+        catch(IOException e) { e.printStackTrace(); Log.i(TAG, "Failed."); connected = false; }
 
         if (connected) {
             try { outputStream = bluetoothSocket.getOutputStream(); } catch (IOException e) { e.printStackTrace(); }
@@ -490,6 +499,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
      */
     private void BTDisconnect()
     {
+        Log.i(TAG, "Disconnecting Bluetooth...");
         try {
 
             outputStream.flush(); outputStream.close(); bluetoothSocket.close(); bluetoothDevice = null;
