@@ -80,11 +80,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     int actualHeight = 0;
     Point screenCenter, targetCenter;
     State direction = State.STOP;
-
-    final ToggleButton btnRawImage = findViewById(R.id.btnRawImage);
-    final ToggleButton btnThresholdImage = findViewById(R.id.btnThresholdImage);
-    final ToggleButton btnTrackImage = findViewById(R.id.btnTrackImage);
-    final ToggleButton btnConnectImage = findViewById(R.id.btnConnectImage);
+    boolean isTracking = false;
 
     RangeSeekBar rsbHue, rsbSaturation,  rsbValue;
 
@@ -132,6 +128,11 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         mImgGroup = findViewById(R.id.imgGroup);
         mHsvGroup = findViewById(R.id.hsvGroup);
 
+        final ToggleButton btnRawImage = findViewById(R.id.btnRawImage);
+        final ToggleButton btnThresholdImage = findViewById(R.id.btnThresholdImage);
+        final ToggleButton btnTrackImage = findViewById(R.id.btnTrackImage);
+        final ToggleButton btnConnectImage = findViewById(R.id.btnConnectImage);
+
         btnRawImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -159,7 +160,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         btnTrackImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                btnTrackImage.setChecked(true);
+                isTracking = !isTracking;
+                btnTrackImage.setChecked(isTracking);
             }
         });
 
@@ -277,7 +279,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
 
-        if (btnTrackImage.isChecked() ) trackObject(mRgba);
+        if (isTracking ) trackObject(mRgba);
 
         switch (iImgType) {
             case 0 : return mRgba;
