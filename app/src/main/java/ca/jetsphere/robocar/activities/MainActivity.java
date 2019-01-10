@@ -6,22 +6,20 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -42,39 +40,30 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.imgproc.Moments;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 import ca.jetsphere.robocar.R;
+import ca.jetsphere.robocar.services.BluetoothService;
 
 /**
  *
  */
-public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2
+public class MainActivity extends AbstractActivity implements CameraBridgeViewBase.CvCameraViewListener2
 {
     private static String TAG = "MainActivity";
     private static final String FRAGMENT_DIALOG = "dialog";
     private static final int REQUEST_CAMERA_PERMISSION = 1;
 
-    public enum State { STOP, FORWARD, REVERSE, TURN_LEFT, TURN_RIGHT, FORWARD_LEFT, FORWARD_RIGHT };
-
-    private final String DEVICE_ADDRESS = "98:D3:31:FC:69:F7";
-    private final UUID PORT_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
-
-    private OutputStream outputStream;
-    private BluetoothDevice bluetoothDevice;
-    private BluetoothSocket bluetoothSocket;
+    private enum FrameSource { RAW, THRESHOLD };
+    private enum State { STOP, FORWARD, REVERSE, TURN_LEFT, TURN_RIGHT, FORWARD_LEFT, FORWARD_RIGHT };
 
     private View mImgGroup, mHsvGroup;
 
     JavaCameraView javaCameraView;
     Mat mRgba, imgBlurred, imgThreshold, imgTemp;
     Mat erodeElement, dilateElement;
-    int iImgType = 0;
+    FrameSource frameSource = FrameSource.RAW;
 
     final int requestedWidth = 1024; // 1280;
     final int requestedHeight = 576; //  720;
@@ -133,17 +122,35 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         mImgGroup = findViewById(R.id.imgGroup);
         mHsvGroup = findViewById(R.id.hsvGroup);
 
+        final ToggleButton btnConnect = findViewById(R.id.btnConnect);
+        final ImageButton btnDrive = findViewById(R.id.btnDrive);
+
         final ToggleButton btnRawImage = findViewById(R.id.btnRawImage);
         final ToggleButton btnThresholdImage = findViewById(R.id.btnThresholdImage);
         final ToggleButton btnTrackImage = findViewById(R.id.btnTrackImage);
-        final ToggleButton btnConnectImage = findViewById(R.id.btnConnectImage);
+
+        btnConnect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.i(TAG, "BT Connect clicked...");
+            }
+        });
+
+        btnDrive.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.i(TAG, "Drive clicked...");
+
+                Intent myIntent = new Intent(MainActivity.this, DriveActivity.class);
+                MainActivity.this.startActivity(myIntent);            }
+        });
 
         btnRawImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 btnRawImage.setChecked(true);
                 btnThresholdImage.setChecked(false);
-                iImgType = 0;
+                frameSource = FrameSource.RAW;
             }
         });
 
@@ -151,14 +158,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             @Override
             public void onClick(View view) {
                 btnRawImage.setChecked(false);
-//                btnHSVImage.setChecked(false);
                 btnThresholdImage.setChecked(true);
 
                 mImgGroup.setVisibility(View.GONE);
                 mHsvGroup.setVisibility(View.VISIBLE);
                 rsbHue.setVisibility(View.VISIBLE);
 
-                iImgType = 2;
+                frameSource = FrameSource.THRESHOLD;
             }
         });
 
@@ -167,21 +173,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             public void onClick(View view) {
                 isTracking = !isTracking;
                 btnTrackImage.setChecked(isTracking);
-            }
-        });
-
-        btnConnectImage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.i(TAG, "BT Connect clicked...");
-                if ( bluetoothDevice == null || !bluetoothSocket.isConnected()) {
-                    if ( bluetoothDevice == null) bluetoothDevice = BTInit();
-                    btnConnectImage.setChecked(bluetoothDevice == null ? false : BTConnect());
-                }
-                else {
-                    BTDisconnect();
-                    btnConnectImage.setChecked(false);
-                }
             }
         });
 
@@ -226,6 +217,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 btnValue.setChecked(true);
             }
         });
+
+        // Start the Bluetooth Service
+        startService(new Intent(this, BluetoothService.class));
     }
 
     @Override
@@ -285,12 +279,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
 
-        if (isTracking ) trackObject(mRgba);
+        if (frameSource == FrameSource.THRESHOLD || isTracking ) trackObject(mRgba);
 
-        switch (iImgType) {
-            case 0 : return mRgba;
-            case 2 : return imgThreshold;
-            default: return mRgba;
+        switch (frameSource) {
+            case RAW        : return mRgba;
+            case THRESHOLD  : return imgThreshold;
+            default         : return mRgba;
         }
     }
 
@@ -437,87 +431,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         } else {
             mImgGroup.setVisibility(View.VISIBLE);
         }
-    }
-
-    /**
-     *
-     */
-    private BluetoothDevice BTInit() {
-        Log.i(TAG, "Initializing Bluetooth...");
-        Toast.makeText(getApplicationContext(), "Initializing Bluetooth...", Toast.LENGTH_SHORT).show();
-
-        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        if(bluetoothAdapter == null) { Toast.makeText(getApplicationContext(), "Device doesn't support bluetooth", Toast.LENGTH_SHORT).show(); return null; }
-
-        if(!bluetoothAdapter.isEnabled()) {
-            Intent enableAdapter = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableAdapter, 0);
-
-            try { Thread.sleep(1000); } catch(InterruptedException e) { e.printStackTrace(); }
-        }
-
-        Set<BluetoothDevice> bondedDevices = bluetoothAdapter.getBondedDevices();
-
-        if(bondedDevices.isEmpty())
-
-        { Toast.makeText(getApplicationContext(), "Please pair the device first", Toast.LENGTH_SHORT).show(); return null; }
-
-        for(BluetoothDevice device : bondedDevices) {
-            if(device.getAddress().equals(DEVICE_ADDRESS)) {
-                Log.i(TAG, "Initialized.");
-                return device;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     *
-     */
-    private boolean BTConnect()
-    {
-        Log.i(TAG, "Connecting Bluetooth...");
-        Toast.makeText(getApplicationContext(), "Connecting Bluetooth...", Toast.LENGTH_SHORT).show();
-
-        boolean connected = true;
-
-        try {
-            bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(PORT_UUID); //Creates a socket to handle the outgoing connection
-            bluetoothSocket.connect();
-
-            Log.i(TAG, "Connected.");
-            Toast.makeText(getApplicationContext(), "Connection to bluetooth device successful", Toast.LENGTH_LONG).show();
-        }
-        catch(IOException e) { e.printStackTrace(); Log.i(TAG, "Failed."); connected = false; }
-
-        if (connected) {
-            try { outputStream = bluetoothSocket.getOutputStream(); } catch (IOException e) { e.printStackTrace(); }
-        }
-
-        return connected;
-    }
-
-    /**
-     *
-     */
-    private void BTDisconnect()
-    {
-        Log.i(TAG, "Disconnecting Bluetooth...");
-        try {
-
-            outputStream.flush(); outputStream.close(); bluetoothSocket.close(); bluetoothDevice = null;
-
-        } catch (IOException e) { e.printStackTrace(); }
-    }
-
-    /**
-     *
-     */
-    private void SendCommand(String command)
-    {
-        try { outputStream.write(command.getBytes()); } catch (IOException e) { e.printStackTrace(); }
     }
 
     /**
