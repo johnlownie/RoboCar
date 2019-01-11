@@ -3,12 +3,12 @@ package ca.jetsphere.robocar.devices;
 import android.content.Context;
 import android.hardware.Camera;
 import android.util.AttributeSet;
-import android.util.Log;
 
 import org.opencv.android.JavaCameraView;
 
-import java.util.List;
-
+/**
+ *
+ */
 public class MyJavaCameraView extends JavaCameraView
 {
     private static String TAG = "MyJavaCameraView";
