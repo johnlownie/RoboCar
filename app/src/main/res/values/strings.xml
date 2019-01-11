@@ -16,6 +16,8 @@
     <string name="error_connect_failed">Connection Failed</string>
     <string name="error_connect_lost">Connection Lost</string>
 
+    <string name="flashlight">Flashlight</string>
+
     <string name="title_activity_drive">DriveActivity</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>

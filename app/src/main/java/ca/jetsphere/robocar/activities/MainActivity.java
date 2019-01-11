@@ -18,9 +18,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import org.florescu.android.rangeseekbar.RangeSeekBar;
@@ -44,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ca.jetsphere.robocar.R;
+import ca.jetsphere.robocar.devices.MyJavaCameraView;
 import ca.jetsphere.robocar.services.BluetoothService;
 
 /**
@@ -60,7 +59,7 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
 
     private View mImgGroup, mHsvGroup;
 
-    JavaCameraView javaCameraView;
+    MyJavaCameraView javaCameraView;
     Mat mRgba, imgBlurred, imgThreshold, imgTemp;
     Mat erodeElement, dilateElement;
     FrameSource frameSource = FrameSource.RAW;
@@ -226,6 +225,7 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
     protected void onPause() {
         super.onPause();
         if (javaCameraView != null) {
+            javaCameraView.turnOffTheFlash();
             javaCameraView.disableView();
         }
     }
@@ -234,6 +234,7 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
     protected void onDestroy() {
         super.onDestroy();
         if (javaCameraView != null) {
+            javaCameraView.turnOffTheFlash();
             javaCameraView.disableView();
         }
     }
@@ -417,6 +418,9 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
                 toggle();
             }
         });
+
+        // Turn on the flashlight
+        if (javaCameraView != null) javaCameraView.turnOnTheFlash();
     }
 
     private void toggle() {
@@ -449,5 +453,4 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
 
         return maxIndex;
     }
-
 }
