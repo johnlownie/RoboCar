@@ -6,10 +6,13 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
 import android.os.Bundle;
@@ -122,7 +125,8 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
         mHsvGroup = findViewById(R.id.hsvGroup);
 
         final ToggleButton btnConnect = findViewById(R.id.btnConnect);
-        final ImageButton btnDrive = findViewById(R.id.btnDrive);
+        final ToggleButton btnTorch = findViewById(R.id.btnTorch);
+        final ImageButton  btnDrive = findViewById(R.id.btnDrive);
 
         final ToggleButton btnRawImage = findViewById(R.id.btnRawImage);
         final ToggleButton btnThresholdImage = findViewById(R.id.btnThresholdImage);
@@ -135,11 +139,16 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
             }
         });
 
+        btnTorch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (btnTorch.isChecked()) javaCameraView.torchOn(); else javaCameraView.torchOff();
+            }
+        });
+
         btnDrive.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.i(TAG, "Drive clicked...");
-
                 Intent myIntent = new Intent(MainActivity.this, DriveActivity.class);
                 MainActivity.this.startActivity(myIntent);            }
         });
@@ -225,8 +234,11 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
     protected void onPause() {
         super.onPause();
         if (javaCameraView != null) {
-            javaCameraView.turnOffTheFlash();
+            javaCameraView.torchOff();
             javaCameraView.disableView();
+
+            ToggleButton btnTorch = findViewById(R.id.btnTorch);
+            btnTorch.setChecked(false);
         }
     }
 
@@ -234,8 +246,11 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
     protected void onDestroy() {
         super.onDestroy();
         if (javaCameraView != null) {
-            javaCameraView.turnOffTheFlash();
+            javaCameraView.torchOff();
             javaCameraView.disableView();
+
+            ToggleButton btnTorch = findViewById(R.id.btnTorch);
+            btnTorch.setChecked(false);
         }
     }
 
@@ -418,9 +433,6 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
                 toggle();
             }
         });
-
-        // Turn on the flashlight
-        if (javaCameraView != null) javaCameraView.turnOnTheFlash();
     }
 
     private void toggle() {

@@ -30,33 +30,22 @@ public class MyJavaCameraView extends JavaCameraView
     /**
      *
      */
-    public void turnOffTheFlash() {
-        if (mCamera == null) {
-            Log.i(TAG, "Camera is NULL");
-            return;
-        }
+    public void torchOff() {
+        if (mCamera == null) return;
 
         Camera.Parameters params = mCamera.getParameters();
         params.setFlashMode(params.FLASH_MODE_OFF);
         mCamera.setParameters(params);
+        mCamera.startPreview();
     }
 
     /**
      *
      */
-    public void turnOnTheFlash() {
-        if (mCamera == null) {
-            try {
-                mCamera = android.hardware.Camera.open();
-            } catch (Exception e) {
-                Log.i(TAG, "Camera is NULL");
-                return;
-            }
-        }
+    public void torchOn() {
+        if (mCamera == null) return;
 
         Camera.Parameters params = mCamera.getParameters();
-        List<String> FlashModes = params.getSupportedFlashModes();
-
         params.setFlashMode(params.FLASH_MODE_TORCH);
         mCamera.setParameters(params);
         mCamera.startPreview();

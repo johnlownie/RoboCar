@@ -71,6 +71,19 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <ToggleButton
+        android:id="@+id/btnTorch"
+        style="@style/btButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_weight="1"
+        android:background="@drawable/bt_toggle_bg"
+        android:checked="false"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnConnect" />
+
     <ImageButton
         android:id="@+id/btnDrive"
         android:layout_width="36dp"
@@ -80,7 +93,7 @@
         android:src="@drawable/steering_wheel"
         android:background="@null"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnConnect" />
+        app:layout_constraintTop_toBottomOf="@+id/btnTorch" />
 
     <ToggleButton
         android:id="@+id/btnRawImage"
@@ -200,7 +213,7 @@
         android:layout_width="27dp"
         android:layout_height="26dp"
         android:visibility="invisible"
-        app:constraint_referenced_ids="btnRawImage,btnThresholdImage,btnTrackImage,btnConnect,btnDrive" />
+        app:constraint_referenced_ids="btnRawImage,btnThresholdImage,btnTrackImage,btnConnect,btnTorch,btnDrive" />
 
     <android.support.constraint.Group
         android:id="@+id/hsvGroup"
