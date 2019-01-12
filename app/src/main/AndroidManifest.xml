@@ -50,6 +50,11 @@
             android:name=".services.BluetoothService"
             android:enabled="true"
             android:exported="true" />
+
+        <service
+            android:name=".services.MessengerService"
+            android:enabled="true"
+            android:exported="true" />
     </application>
 
 </manifest>
