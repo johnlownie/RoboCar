@@ -6,13 +6,19 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraManager;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
 import android.os.Bundle;
@@ -47,6 +53,7 @@ import java.util.List;
 import ca.jetsphere.robocar.R;
 import ca.jetsphere.robocar.devices.MyJavaCameraView;
 import ca.jetsphere.robocar.services.BluetoothService;
+import ca.jetsphere.robocar.services.MessengerService;
 
 /**
  *
@@ -59,6 +66,33 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
 
     private enum FrameSource { RAW, THRESHOLD };
     private enum State { STOP, FORWARD, REVERSE, TURN_LEFT, TURN_RIGHT, FORWARD_LEFT, FORWARD_RIGHT };
+
+    /** Messenger for communicating with the service. */
+    Messenger mService = null;
+    /** Flag indicating whether we have called bind on the service. */
+    boolean mBound;
+
+    /**
+     * Class for interacting with the main interface of the service.
+     */
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            // This is called when the connection with the service has been
+            // established, giving us the object we can use to
+            // interact with the service.  We are communicating with the
+            // service using a Messenger, so here we get a client-side
+            // representation of that from the raw IBinder object.
+            mService = new Messenger(service);
+            mBound = true;
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            // This is called when the connection with the service has been
+            // unexpectedly disconnected -- that is, its process crashed.
+            mService = null;
+            mBound = false;
+        }
+    };
 
     private View mImgGroup, mHsvGroup;
 
@@ -136,6 +170,7 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
             @Override
             public void onClick(View view) {
                 Log.i(TAG, "BT Connect clicked...");
+                toggleBluetooth(btnConnect.isChecked());
             }
         });
 
@@ -304,6 +339,23 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
         }
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Bind to the service
+        bindService(new Intent(this, BluetoothService.class), mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Unbind from the service
+        if (mBound) {
+            unbindService(mConnection);
+            mBound = false;
+        }
+    }
+
     /**
      *
      */
@@ -464,5 +516,19 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
         }
 
         return maxIndex;
+    }
+
+    /**
+     *
+     */
+    public void toggleBluetooth(boolean connect) {
+        if (!mBound) return;
+        // Create and send a message to the service, using a supported 'what' value
+        Message msg = Message.obtain(null, BluetoothService.Action.SEND.ordinal());
+        try {
+            mService.send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -83,10 +83,8 @@ public class DriveActivity extends AppCompatActivity
         btnTrack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                sayHello();
-
-//                Intent myIntent = new Intent(DriveActivity.this, MainActivity.class);
-//                DriveActivity.this.startActivity(myIntent);
+                Intent myIntent = new Intent(DriveActivity.this, MainActivity.class);
+                DriveActivity.this.startActivity(myIntent);
             }
         });
     }

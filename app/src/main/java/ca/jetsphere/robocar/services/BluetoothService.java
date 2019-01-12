@@ -4,13 +4,16 @@ import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.Messenger;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,12 +37,22 @@ public class BluetoothService extends Service
     private OutputStream outputStream;
 
     private enum State { NONE, LISTEN, CONNECTING, CONNECTED };
+    static final public int DISCONNECT = 0;
+    static final public int CONNECT    = 1;
+    static final public int SEND       = 2;
+    static final public int RECEIVE    = 3;
+
     private ConnectThread connectThread;
     static private ConnectedThread connectedThread;
     static private State deviceState;
 
     private final String DEVICE_ADDRESS = "98:D3:31:FC:69:F7";
     private final UUID PORT_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
+
+    /**
+     * Target we publish for clients to send messages to IncomingHandler.
+     */
+    Messenger mMessenger;
 
     /**
      *
@@ -52,20 +65,17 @@ public class BluetoothService extends Service
      */
     @Override
     public void onCreate() {
-        Log.i(TAG, "Starting service...");
+        super.onCreate();
 
         deviceState = State.NONE;
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        super.onCreate();
-//        android.os.Debug.waitForDebugger();
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        mHandler = RoboCarApplication.getInstance().getHandler();
-
-        return mBinder;
+        Toast.makeText(getApplicationContext(), "binding", Toast.LENGTH_SHORT).show();
+        mMessenger = new Messenger(new IncomingHandler(this));
+        return mMessenger.getBinder();
     }
 
     @Override
@@ -341,5 +351,37 @@ public class BluetoothService extends Service
         }
 
         stopSelf();
+    }
+
+    /**
+     * Handler of incoming messages from clients.
+     */
+    static class IncomingHandler extends Handler {
+        private Context applicationContext;
+
+        IncomingHandler(Context context) {
+            applicationContext = context.getApplicationContext();
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case DISCONNECT:
+                    Toast.makeText(applicationContext, "Disconnect!", Toast.LENGTH_SHORT).show();
+                    break;
+                case CONNECT:
+                    Toast.makeText(applicationContext, "Connect!", Toast.LENGTH_SHORT).show();
+                    break;
+                case SEND:
+                    Toast.makeText(applicationContext, msg.obj.toString(), Toast.LENGTH_SHORT).show();
+                    break;
+                case RECEIVE:
+                    Toast.makeText(applicationContext, "Receive!", Toast.LENGTH_SHORT).show();
+                    break;
+                default:
+                    super.handleMessage(msg);
+                    break;
+            }
+        }
     }
 }
