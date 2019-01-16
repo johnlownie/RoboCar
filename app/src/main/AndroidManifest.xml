@@ -44,15 +44,12 @@
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/title_activity_drive"
             android:theme="@style/FullscreenTheme"
-            android:screenOrientation="landscape"></activity>
+            android:screenOrientation="landscape">
+
+        </activity>
 
         <service
             android:name=".services.BluetoothService"
-            android:enabled="true"
-            android:exported="true" />
-
-        <service
-            android:name=".services.MessengerService"
             android:enabled="true"
             android:exported="true" />
     </application>

@@ -6,19 +6,16 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraManager;
 import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
 import android.os.Bundle;
@@ -33,7 +30,6 @@ import android.widget.ToggleButton;
 import org.florescu.android.rangeseekbar.RangeSeekBar;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.JavaCameraView;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
@@ -53,7 +49,6 @@ import java.util.List;
 import ca.jetsphere.robocar.R;
 import ca.jetsphere.robocar.devices.MyJavaCameraView;
 import ca.jetsphere.robocar.services.BluetoothService;
-import ca.jetsphere.robocar.services.MessengerService;
 
 /**
  *
@@ -67,32 +62,9 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
     private enum FrameSource { RAW, THRESHOLD };
     private enum State { STOP, FORWARD, REVERSE, TURN_LEFT, TURN_RIGHT, FORWARD_LEFT, FORWARD_RIGHT };
 
-    /** Messenger for communicating with the service. */
-    Messenger mService = null;
-    /** Flag indicating whether we have called bind on the service. */
-    boolean mBound;
-
-    /**
-     * Class for interacting with the main interface of the service.
-     */
-    private ServiceConnection mConnection = new ServiceConnection() {
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            // This is called when the connection with the service has been
-            // established, giving us the object we can use to
-            // interact with the service.  We are communicating with the
-            // service using a Messenger, so here we get a client-side
-            // representation of that from the raw IBinder object.
-            mService = new Messenger(service);
-            mBound = true;
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            // This is called when the connection with the service has been
-            // unexpectedly disconnected -- that is, its process crashed.
-            mService = null;
-            mBound = false;
-        }
-    };
+    BluetoothService mService = null;
+    private Intent mIntent;
+    private boolean mBound;
 
     private View mImgGroup, mHsvGroup;
 
@@ -118,6 +90,33 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
                 case BaseLoaderCallback.SUCCESS : javaCameraView.enableView(); break;
                 default : super.onManagerConnected(status);
             }
+        }
+    };
+
+    /**
+     *
+     */
+    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final ToggleButton btnConnect = findViewById(R.id.btnConnect);
+            btnConnect.setChecked(intent.getBooleanExtra("connected", false));
+        }
+    };
+
+    /**
+     *
+     */
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
+            mService = binder.getService();
+            mBound = true;
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            mService = null;
+            mBound = false;
         }
     };
 
@@ -169,15 +168,15 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
         btnConnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.i(TAG, "BT Connect clicked...");
-                toggleBluetooth(btnConnect.isChecked());
+                if (mBound) mService.toggle(btnConnect.isChecked());
             }
         });
 
         btnTorch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (btnTorch.isChecked()) javaCameraView.torchOn(); else javaCameraView.torchOff();
+//                if (btnTorch.isChecked()) javaCameraView.torchOn(); else javaCameraView.torchOff();
+               if (mBound) mService.sendMessage("1");
             }
         });
 
@@ -185,7 +184,8 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
             @Override
             public void onClick(View view) {
                 Intent myIntent = new Intent(MainActivity.this, DriveActivity.class);
-                MainActivity.this.startActivity(myIntent);            }
+                MainActivity.this.startActivity(myIntent);
+            }
         });
 
         btnRawImage.setOnClickListener(new View.OnClickListener() {
@@ -260,9 +260,6 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
                 btnValue.setChecked(true);
             }
         });
-
-        // Start the Bluetooth Service
-        startService(new Intent(this, BluetoothService.class));
     }
 
     @Override
@@ -275,6 +272,8 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
             ToggleButton btnTorch = findViewById(R.id.btnTorch);
             btnTorch.setChecked(false);
         }
+
+        unregisterReceiver(broadcastReceiver);
     }
 
     @Override
@@ -305,6 +304,9 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
             Log.i(TAG, "OpenCv failed to load");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION, this, mLoaderCallback);
         }
+
+        startService(mIntent);
+        registerReceiver(broadcastReceiver, new IntentFilter(BluetoothService.BROADCAST_ACTION));
     }
 
     @Override
@@ -342,14 +344,15 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
     @Override
     protected void onStart() {
         super.onStart();
-        // Bind to the service
-        bindService(new Intent(this, BluetoothService.class), mConnection, Context.BIND_AUTO_CREATE);
+
+        mIntent = new Intent(this, BluetoothService.class);
+        bindService(mIntent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        // Unbind from the service
+
         if (mBound) {
             unbindService(mConnection);
             mBound = false;
@@ -516,19 +519,5 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
         }
 
         return maxIndex;
-    }
-
-    /**
-     *
-     */
-    public void toggleBluetooth(boolean connect) {
-        if (!mBound) return;
-        // Create and send a message to the service, using a supported 'what' value
-        Message msg = Message.obtain(null, BluetoothService.Action.SEND.ordinal());
-        try {
-            mService.send(msg);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
     }
 }
