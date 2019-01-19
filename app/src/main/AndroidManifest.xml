@@ -39,15 +39,6 @@
             android:name=".activities.HiddenActivity"
             android:theme="@android:style/Theme.NoDisplay" />
 
-        <activity
-            android:name=".activities.DriveActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="@string/title_activity_drive"
-            android:theme="@style/FullscreenTheme"
-            android:screenOrientation="landscape">
-
-        </activity>
-
         <service
             android:name=".services.BluetoothService"
             android:enabled="true"

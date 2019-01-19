@@ -10,6 +10,7 @@
     <string name="btnValue">Value</string>
     <string name="btnTrack">Track</string>
     <string name="btnDrive">Drive</string>
+    <string name="btnAuto">Auto</string>
 
     <string name="request_permission">This app needs camera permission</string>
 

@@ -20,11 +20,14 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import org.florescu.android.rangeseekbar.RangeSeekBar;
@@ -47,6 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ca.jetsphere.robocar.R;
+import ca.jetsphere.robocar.devices.Joystick;
 import ca.jetsphere.robocar.devices.MyJavaCameraView;
 import ca.jetsphere.robocar.services.BluetoothService;
 
@@ -66,7 +70,7 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
     private Intent mIntent;
     private boolean mBound;
 
-    private View mImgGroup, mHsvGroup;
+    private View mTrackGroup, mDriveGroup, mHsvGroup;
 
     MyJavaCameraView javaCameraView;
     Mat mRgba, imgBlurred, imgThreshold, imgTemp;
@@ -154,12 +158,14 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
         rsbValue.setSelectedMinValue(6);
         rsbValue.setSelectedMaxValue(255);
 
-        mImgGroup = findViewById(R.id.imgGroup);
+        mTrackGroup = findViewById(R.id.trackGroup);
+        mDriveGroup = findViewById(R.id.driveGroup);
         mHsvGroup = findViewById(R.id.hsvGroup);
 
         final ToggleButton btnConnect = findViewById(R.id.btnConnect);
         final ToggleButton btnTorch = findViewById(R.id.btnTorch);
         final ImageButton  btnDrive = findViewById(R.id.btnDrive);
+        final ImageButton  btnAuto = findViewById(R.id.btnAuto);
 
         final ToggleButton btnRawImage = findViewById(R.id.btnRawImage);
         final ToggleButton btnThresholdImage = findViewById(R.id.btnThresholdImage);
@@ -175,16 +181,23 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
         btnTorch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                if (btnTorch.isChecked()) javaCameraView.torchOn(); else javaCameraView.torchOff();
-               if (mBound) mService.sendMessage("1");
+                if (btnTorch.isChecked()) javaCameraView.torchOn(); else javaCameraView.torchOff();
             }
         });
 
         btnDrive.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent myIntent = new Intent(MainActivity.this, DriveActivity.class);
-                MainActivity.this.startActivity(myIntent);
+                mTrackGroup.setVisibility(View.GONE);
+                mDriveGroup.setVisibility(View.VISIBLE);
+            }
+        });
+
+        btnAuto.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mDriveGroup.setVisibility(View.GONE);
+                mTrackGroup.setVisibility(View.VISIBLE);
             }
         });
 
@@ -203,7 +216,7 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
                 btnRawImage.setChecked(false);
                 btnThresholdImage.setChecked(true);
 
-                mImgGroup.setVisibility(View.GONE);
+                mTrackGroup.setVisibility(View.GONE);
                 mHsvGroup.setVisibility(View.VISIBLE);
                 rsbHue.setVisibility(View.VISIBLE);
 
@@ -258,6 +271,42 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
                 btnHue.setChecked(false);
                 btnSaturation.setChecked(false);
                 btnValue.setChecked(true);
+            }
+        });
+
+        final TextView textView1 = findViewById(R.id.textView1);
+        final TextView textView2 = findViewById(R.id.textView2);
+        final TextView textView3 = findViewById(R.id.textView3);
+        final TextView textView4 = findViewById(R.id.textView4);
+        final TextView textView5 = findViewById(R.id.textView5);
+
+        final RelativeLayout rlJoystick = findViewById(R.id.layout_joystick);
+        final Joystick joystick = new Joystick(getApplicationContext(), rlJoystick, R.drawable.joystick_button);
+        joystick.setStickSize(300, 300);
+        joystick.setLayoutSize(900, 900);
+        joystick.setLayoutAlpha(150);
+        joystick.setStickAlpha(100);
+        joystick.setOffset(90);
+        joystick.setMinDistance(50);
+
+        rlJoystick.setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View arg0, MotionEvent arg1) {
+                joystick.drawStick(arg1);
+                if(arg1.getAction() == MotionEvent.ACTION_DOWN || arg1.getAction() == MotionEvent.ACTION_MOVE) {
+                    int direction = joystick.get8Direction();
+                    Log.i(TAG, "Direction: " + direction);
+
+                    textView1.setText("X: " + String.valueOf(joystick.getX()));
+                    textView2.setText("Y: " + String.valueOf(joystick.getY()));
+                    textView3.setText("Angle: " + String.valueOf(joystick.getAngle()));
+                    textView4.setText("Distance: " + String.valueOf(joystick.getDistance()));
+                    textView5.setText("Direction: " + direction);
+
+                    if (mBound) {
+                        mService.sendMessage(String.valueOf(joystick.getX()) + "," + String.valueOf(joystick.getY()));
+                    }
+                }
+                return true;
             }
         });
     }
@@ -485,23 +534,21 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
         javaCameraView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                toggle();
+                if (mTrackGroup.getVisibility() == View.VISIBLE) {
+                    mTrackGroup.setVisibility(View.GONE);
+                } else if (mDriveGroup.getVisibility() == View.VISIBLE) {
+                    // do nothing if we are in drive mode
+                } else if (mHsvGroup.getVisibility() == View.VISIBLE) {
+                    mHsvGroup.setVisibility(View.GONE);
+                    mTrackGroup.setVisibility(View.VISIBLE);
+                    rsbHue.setVisibility(View.INVISIBLE);
+                    rsbSaturation.setVisibility(View.INVISIBLE);
+                    rsbValue.setVisibility(View.INVISIBLE);
+                } else {
+                    mTrackGroup.setVisibility(View.VISIBLE);
+                }
             }
         });
-    }
-
-    private void toggle() {
-        if (mImgGroup.getVisibility() == View.VISIBLE) {
-            mImgGroup.setVisibility(View.GONE);
-        } else if (mHsvGroup.getVisibility() == View.VISIBLE) {
-            mHsvGroup.setVisibility(View.GONE);
-            mImgGroup.setVisibility(View.VISIBLE);
-            rsbHue.setVisibility(View.INVISIBLE);
-            rsbSaturation.setVisibility(View.INVISIBLE);
-            rsbValue.setVisibility(View.INVISIBLE);
-        } else {
-            mImgGroup.setVisibility(View.VISIBLE);
-        }
     }
 
     /**
