@@ -25,6 +25,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -181,6 +182,10 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
         btnTorch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (javaCameraView == null) {
+                    btnTorch.setChecked(false);
+                    return;
+                }
                 if (btnTorch.isChecked()) javaCameraView.torchOn(); else javaCameraView.torchOff();
             }
         });
@@ -235,6 +240,7 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
         final ToggleButton btnHue = findViewById(R.id.btnHue);
         final ToggleButton btnSaturation = findViewById(R.id.btnSaturation);
         final ToggleButton btnValue = findViewById(R.id.btnValue);
+        final Button btnReset = findViewById(R.id.btnReset);
         btnHue.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -271,6 +277,20 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
                 btnHue.setChecked(false);
                 btnSaturation.setChecked(false);
                 btnValue.setChecked(true);
+            }
+        });
+
+        btnReset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                rsbHue.setSelectedMinValue(0);
+                rsbHue.setSelectedMaxValue(255);
+
+                rsbSaturation.setSelectedMinValue(0);
+                rsbSaturation.setSelectedMaxValue(255);
+
+                rsbValue.setSelectedMinValue(0);
+                rsbValue.setSelectedMaxValue(255);
             }
         });
 

@@ -41,22 +41,26 @@
 
     <ImageButton
         android:id="@+id/btnDrive"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:src="@drawable/steering_wheel"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
         android:background="@null"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnTorch" />
 
     <ImageButton
         android:id="@+id/btnAuto"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:src="@drawable/steering_wheel"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
+        android:src="@drawable/gear"
         android:background="@null"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnTorch" />
@@ -66,7 +70,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
-        app:constraint_referenced_ids="btnConnect,btnDrive,btnTorch,btnRawImage,btnThresholdImage,btnTrackImage" />
+        app:constraint_referenced_ids="btnConnect,btnTorch,btnDrive,btnRawImage,btnThresholdImage,btnTrackImage" />
 
     <ToggleButton
         android:id="@+id/btnRawImage"
@@ -130,7 +134,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
-        app:constraint_referenced_ids="btnConnect,btnTorch,btnAuto,layout_joystick,textView1,textView2,textView3,textView4,textView5" />
+        app:constraint_referenced_ids="btnAuto,layout_joystick,textView1,textView2,textView3,textView4,textView5" />
 
     <RelativeLayout
         android:id="@+id/layout_joystick"
@@ -155,7 +159,7 @@
         android:text="X: 0"
         android:textColor="#fff"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnTrack" />
+        app:layout_constraintTop_toBottomOf="@+id/btnAuto" />
 
     <TextView
         android:id="@+id/textView2"
@@ -205,8 +209,8 @@
         android:id="@+id/hsvGroup"
         android:layout_width="27dp"
         android:layout_height="26dp"
-        android:visibility="gone"
-        app:constraint_referenced_ids="btnHue,btnSaturation,btnValue" />
+        android:visibility="visible"
+        app:constraint_referenced_ids="btnHue,btnSaturation,btnValue,btnReset" />
 
     <org.florescu.android.rangeseekbar.RangeSeekBar
         android:id="@+id/rsbHue"
@@ -279,12 +283,12 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:layout_weight="1"
-        android:text="@string/btnSaturation"
-        android:textOn="@string/btnSaturation"
-        android:textOff="@string/btnSaturation"
         android:background="@drawable/toggle_button_custom"
-        android:textColor="@color/toggle_button_color"
         android:checked="false"
+        android:text="@string/btnSaturation"
+        android:textColor="@color/toggle_button_color"
+        android:textOff="@string/btnSaturation"
+        android:textOn="@string/btnSaturation"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/btnValue"
         app:layout_constraintHorizontal_bias="0.5"
@@ -305,8 +309,22 @@
         android:textColor="@color/toggle_button_color"
         android:checked="false"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btnReset"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/btnSaturation" />
+
+    <Button
+        android:id="@+id/btnReset"
+        style="?metaButtonBarButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="@string/btnReset"
+        android:layout_weight="1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btnValue" />
 
 </android.support.constraint.ConstraintLayout>
