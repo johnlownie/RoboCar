@@ -109,6 +109,7 @@ public class BluetoothService extends Service
 
     @Override
     public boolean stopService(Intent name) {
+        Log.i(TAG, "Stopping service...");
         setState(State.NONE);
         if (connectThread != null) {
             connectThread.cancel();
@@ -252,7 +253,7 @@ public class BluetoothService extends Service
             while (true) {
                 try {
                     bytes = inputStream.read(buffer);
-//                    Log.i(TAG, "Got: " + new String(buffer));
+                    Log.v(TAG, "Received: " + new String(buffer));
                     // Send the obtained bytes to the UI Activity
 //                    mHandler.obtainMessage(AbstractActivity.MESSAGE_READ, bytes, -1, buffer).sendToTarget();
                 } catch (Exception e) {
@@ -310,6 +311,7 @@ public class BluetoothService extends Service
      *
      */
     private void connectionFailed() {
+        Log.i(TAG, "Connection failed");
         BluetoothService.this.stop();
 
         if (mHandler == null) return;
@@ -325,6 +327,7 @@ public class BluetoothService extends Service
      *
      */
     private void connectionLost() {
+        Log.i(TAG, "Connection lost");
         BluetoothService.this.stop();
 
         if (mHandler == null) return;
@@ -408,7 +411,7 @@ public class BluetoothService extends Service
         if (BluetoothService.deviceState != State.CONNECTED || connectedThread == null || message == null || message.isEmpty()) return;
 
         synchronized (this) {
-            Log.i(TAG, "Sending:  " + message);
+            Log.v(TAG, "Sending:  " + message);
             connectedThread.write(message.getBytes());
         }
     }

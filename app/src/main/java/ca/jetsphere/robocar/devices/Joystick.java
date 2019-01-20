@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +13,17 @@ import android.view.ViewGroup.LayoutParams;
 
 public class Joystick
 {
-    public enum Stick { NONE, UP, UPRIGHT, RIGHT, DOWNRIGHT, DOWN, DOWNLEFT, LEFT, UPLEFT }
+    private static String TAG = "Joystick";
+
+    public final int NONE      = 0;
+    public final int UP        = 1;
+    public final int UPRIGHT   = 2;
+    public final int RIGHT     = 3;
+    public final int DOWNRIGHT = 4;
+    public final int DOWN      = 5;
+    public final int DOWNLEFT  = 6;
+    public final int LEFT      = 7;
+    public final int UPLEFT    = 8;
 
     private Context mContext;
     private ViewGroup mLayout;
@@ -117,16 +128,16 @@ public class Joystick
     public int get8Direction() {
         if (!touch_state) return 0;
 
-        if (distance <= min_distance) return Stick.NONE.ordinal();
+        if (distance <= min_distance) return NONE;
 
-        if (angle >= 247.5 && angle < 292.5) return Stick.UP       .ordinal(); else
-        if (angle >= 292.5 && angle < 337.5) return Stick.UPRIGHT  .ordinal(); else
-        if (angle >= 337.5 && angle <  22.5) return Stick.RIGHT    .ordinal(); else
-        if (angle >=  22.5 && angle <  67.5) return Stick.DOWNRIGHT.ordinal(); else
-        if (angle >=  67.5 && angle < 112.5) return Stick.DOWN     .ordinal(); else
-        if (angle >= 112.5 && angle < 157.5) return Stick.DOWNLEFT .ordinal(); else
-        if (angle >= 157.5 && angle < 202.5) return Stick.LEFT     .ordinal(); else
-        if (angle >= 202.5 && angle < 247.5) return Stick.UPLEFT   .ordinal();
+        if (angle >= 247.5 && angle < 292.5) return UP       ; else
+        if (angle >= 292.5 && angle < 337.5) return UPRIGHT  ; else
+        if (angle >= 337.5 || angle <  22.5) return RIGHT    ; else
+        if (angle >=  22.5 && angle <  67.5) return DOWNRIGHT; else
+        if (angle >=  67.5 && angle < 112.5) return DOWN     ; else
+        if (angle >= 112.5 && angle < 157.5) return DOWNLEFT ; else
+        if (angle >= 157.5 && angle < 202.5) return LEFT     ; else
+        if (angle >= 202.5 && angle < 247.5) return UPLEFT   ;
 
         return 0;
     }
@@ -137,12 +148,14 @@ public class Joystick
     public int get4Direction() {
         if (!touch_state) return 0;
 
-        if (distance <= min_distance) return Stick.NONE.ordinal();
+        if (distance <= min_distance) return NONE;
 
-        if (angle >= 225 && angle < 315) return Stick.UP   .ordinal(); else
-        if (angle >= 315 && angle <  45) return Stick.RIGHT.ordinal(); else
-        if (angle >=  45 && angle < 135) return Stick.DOWN .ordinal(); else
-        if (angle >= 135 && angle < 225) return Stick.LEFT .ordinal();
+        Log.v(TAG, "Angle: " + angle);
+
+        if (angle >= 225 && angle < 315) return UP   ; else
+        if (angle >= 315 || angle <  45) return RIGHT; else
+        if (angle >=  45 && angle < 135) return DOWN ; else
+        if (angle >= 135 && angle < 225) return LEFT ;
 
         return 0;
     }

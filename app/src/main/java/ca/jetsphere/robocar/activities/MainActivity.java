@@ -2,19 +2,13 @@ package ca.jetsphere.robocar.activities;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Dialog;
-import android.app.DialogFragment;
-import android.app.Fragment;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
@@ -29,6 +23,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import org.florescu.android.rangeseekbar.RangeSeekBar;
@@ -54,6 +49,7 @@ import ca.jetsphere.robocar.R;
 import ca.jetsphere.robocar.devices.Joystick;
 import ca.jetsphere.robocar.devices.MyJavaCameraView;
 import ca.jetsphere.robocar.services.BluetoothService;
+import ca.jetsphere.robocar.utilities.PermissionUtility;
 
 /**
  *
@@ -76,10 +72,10 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
     MyJavaCameraView javaCameraView;
     Mat mRgba, imgBlurred, imgThreshold, imgTemp;
     Mat erodeElement, dilateElement;
-    FrameSource frameSource = FrameSource.RAW;
+    FrameSource frameSource;
 
-    final int requestedWidth = 1024; // 1280;
-    final int requestedHeight = 576; //  720;
+    final int requestedWidth = 1280;
+    final int requestedHeight = 720;
     int actualWidth = 0;
     int actualHeight = 0;
     Point screenCenter, targetCenter;
@@ -88,11 +84,19 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
 
     RangeSeekBar rsbHue, rsbSaturation,  rsbValue;
 
+    static {
+        if (!OpenCVLoader.initDebug()) {
+            Log.e(TAG,"Loading of OpenCv Failed");
+        }
+    }
+
     BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
             switch (status) {
-                case BaseLoaderCallback.SUCCESS : javaCameraView.enableView(); break;
+                case LoaderCallbackInterface.SUCCESS :
+                    javaCameraView.enableView();
+                    break;
                 default : super.onManagerConnected(status);
             }
         }
@@ -142,8 +146,34 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) actionBar.hide();
 
-        tryStartCamera();
+        final Activity thisActivity = this;
 
+        PermissionUtility.checkPermission(thisActivity, Manifest.permission.CAMERA, new PermissionUtility.PermissionAskListener() {
+            @Override
+            public void onNeedPermission() {
+                ActivityCompat.requestPermissions(thisActivity, new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+            }
+
+            @Override
+            public void onPermissionPreviouslyDenied() {
+                //show a dialog explaining permission and then request permission
+            }
+            @Override
+            public void onPermissionDisabled() {
+                Toast.makeText(getApplicationContext(), "Permission Disabled.", Toast.LENGTH_SHORT).show();
+            }
+            @Override
+            public void onPermissionGranted() {
+                tryStartCamera();
+                setViews();
+            }
+        });
+    }
+
+    /**
+     *
+     */
+    public void setViews() {
         rsbHue = findViewById(R.id.rsbHue);
         rsbHue.setRangeValues(0, 255);
         rsbHue.setSelectedMinValue(76);
@@ -313,8 +343,7 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
             public boolean onTouch(View arg0, MotionEvent arg1) {
                 joystick.drawStick(arg1);
                 if(arg1.getAction() == MotionEvent.ACTION_DOWN || arg1.getAction() == MotionEvent.ACTION_MOVE) {
-                    int direction = joystick.get8Direction();
-                    Log.i(TAG, "Direction: " + direction);
+                    int direction = joystick.get4Direction();
 
                     textView1.setText("X: " + String.valueOf(joystick.getX()));
                     textView2.setText("Y: " + String.valueOf(joystick.getY()));
@@ -323,8 +352,12 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
                     textView5.setText("Direction: " + direction);
 
                     if (mBound) {
-                        mService.sendMessage(String.valueOf(joystick.getX()) + "," + String.valueOf(joystick.getY()));
+//                        mService.sendMessage(String.valueOf(joystick.getX()) + "," + String.valueOf(joystick.getY()));
+                        mService.sendMessage(String.valueOf(direction));
                     }
+                }
+                else if(arg1.getAction() == MotionEvent.ACTION_UP) {
+                    mService.sendMessage(String.valueOf(direction));
                 }
                 return true;
             }
@@ -496,48 +529,7 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
     /**
      *
      */
-    public static class ConfirmationDialog extends DialogFragment {
-
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final Fragment parent = getParentFragment();
-            return new AlertDialog.Builder(getActivity())
-                    .setMessage(R.string.request_permission)
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            ActivityCompat.requestPermissions(parent.getActivity(),
-                                    new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
-                        }
-                    })
-                    .setNegativeButton(android.R.string.cancel,
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    Activity activity = parent.getActivity();
-                                    if (activity != null) {
-                                        activity.finish();
-                                    }
-                                }
-                            })
-                    .create();
-        }
-    }
-
-    private void requestCameraPermission() {
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
-            new ConfirmationDialog().show(this.getFragmentManager(), FRAGMENT_DIALOG);
-        } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
-        }
-    }
-
     private void tryStartCamera() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requestCameraPermission();
-            return;
-        }
-
         javaCameraView = findViewById(R.id.java_camera_view);
         javaCameraView.setMaxFrameSize(requestedWidth, requestedHeight);
         javaCameraView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
@@ -551,25 +543,29 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
         javaCameraView.setCvCameraViewListener(this);
         javaCameraView.enableFpsMeter();
 
+        frameSource = FrameSource.RAW;
+
         javaCameraView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.i(TAG, "Clicked the camera view");
                 if (mTrackGroup.getVisibility() == View.VISIBLE) {
                     mTrackGroup.setVisibility(View.GONE);
                 } else if (mDriveGroup.getVisibility() == View.VISIBLE) {
                     // do nothing if we are in drive mode
                 } else if (mHsvGroup.getVisibility() == View.VISIBLE) {
                     mHsvGroup.setVisibility(View.GONE);
+                    final ToggleButton btnThresholdImage = findViewById(R.id.btnThresholdImage);
                     mTrackGroup.setVisibility(View.VISIBLE);
-                    rsbHue.setVisibility(View.INVISIBLE);
-                    rsbSaturation.setVisibility(View.INVISIBLE);
-                    rsbValue.setVisibility(View.INVISIBLE);
+                    rsbHue.setVisibility(View.GONE);
+                    rsbSaturation.setVisibility(View.GONE);
+                    rsbValue.setVisibility(View.GONE);
                 } else {
                     mTrackGroup.setVisibility(View.VISIBLE);
                 }
             }
         });
-    }
+   }
 
     /**
      *
@@ -587,4 +583,9 @@ public class MainActivity extends AbstractActivity implements CameraBridgeViewBa
 
         return maxIndex;
     }
+
+    /**
+     *
+     */
+
 }
